@@ -34,3 +34,9 @@ variable "subnet_gateway" {
 variable "primary_dns" {
   default = "100.125.1.250"
 }
+
+variable "db_name" {
+  description = "The password of magento db name"
+  default     = "magento_db2"
+  type        = string
+}

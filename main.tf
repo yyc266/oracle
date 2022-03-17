@@ -80,3 +80,33 @@ resource "huaweicloud_networking_vip_associate" "vip_associated" {
     huaweicloud_compute_instance.mycompute[1].network.0.port
   ]
 }
+//共享磁盘
+resource "huaweicloud_evs_volume" "myvolume" {
+  name              = "myvolume_${count.index}"
+  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
+  volume_type       = "SAS"
+  multiattach       = true
+  size              = 10
+  count             = 2
+}
+
+resource "huaweicloud_compute_volume_attach" "attached" {
+  instance_id = huaweicloud_compute_instance.mycompute[0].id
+  volume_id   = huaweicloud_evs_volume.myvolume[0].id
+}
+
+//user_data
+data "template_file" "user_data" {
+  template = "${file("user_data.sh")}"
+
+  vars = {
+    DB_NAME = var.db_name
+  }
+}
+
+resource "local_file" "save_inventory" {
+  content  = "${data.template_file.user_data.rendered}"
+  filename = "./user1.sh"
+}
+
+
