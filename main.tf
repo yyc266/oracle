@@ -91,8 +91,15 @@ resource "huaweicloud_evs_volume" "myvolume" {
 }
 
 resource "huaweicloud_compute_volume_attach" "attached" {
-  instance_id = huaweicloud_compute_instance.mycompute[0].id
-  volume_id   = huaweicloud_evs_volume.myvolume[0].id
+
+  instance_ids =  [
+     huaweicloud_compute_instance.mycompute[0].id,
+     huaweicloud_compute_instance.mycompute[1].id
+  ]
+  volume_ids   =   [
+    huaweicloud_evs_volume.myvolume[0].id,
+    huaweicloud_evs_volume.myvolume[1].id
+  ]
 }
 
 //user_data
@@ -109,4 +116,11 @@ resource "local_file" "save_inventory" {
   filename = "./user1.sh"
 }
 
+resource "local_file" "save_inventory" {
+  content  = "${data.template_file.user_data.rendered}"
+  filename = "./user1.sh"
+}
+
+
+user_data  = file("user1.sh")
 
