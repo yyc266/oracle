@@ -44,10 +44,12 @@ resource "huaweicloud_vpc_subnet" "subnet_1" {
 data "huaweicloud_availability_zones" "myaz" {}
 
 data "huaweicloud_compute_flavors" "myflavor" {
+  depends_on = [local_file.save_inventory]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   performance_type  = "normal"
   cpu_core_count    = 2
   memory_size       = 4
+  user_data  = file("user1.sh")
 }
 
 data "huaweicloud_images_image" "myimage" {
@@ -122,5 +124,5 @@ resource "local_file" "save_inventory" {
 }
 
 
-user_data  = file("user1.sh")
+
 
