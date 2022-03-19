@@ -100,3 +100,21 @@ variable "password" {
   default     = "Aa!123456"
   type        = string
 }
+
+//vip
+variable "scan_vip" {
+  description = "scan_vip"
+  default     = "192.168.1.241"
+  type        = string
+}
+
+variable "vip_1" {
+  description = "vip_1"
+  default     = "192.168.1.242"
+  type        = string
+}
+variable "vip_2" {
+  description = "vip_2"
+  default     = "192.168.1.243"
+  type        = string
+}

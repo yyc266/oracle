@@ -109,16 +109,18 @@ resource "huaweicloud_compute_instance" "mycompute_1" {
   security_groups   = [var.security_group]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
+
+  network {
+    uuid  = huaweicloud_vpc_subnet.subnet_2.id
+    fixed_ip_v4  =  var.oracle_1_ip_2
+    source_dest_check  =  false
+  }
+
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_1.id
     fixed_ip_v4  =  var.oracle_1_ip_1
     source_dest_check  =  false
 
-  }
-  network {
-    uuid  = huaweicloud_vpc_subnet.subnet_2.id
-    fixed_ip_v4  =  var.oracle_1_ip_2
-    source_dest_check  =  false
   }
 
 }
@@ -129,16 +131,17 @@ resource "huaweicloud_compute_instance" "mycompute_2" {
   image_id          = "67f433d8-ed0e-4321-a8a2-a71838539e09"
   flavor_id         = data.huaweicloud_compute_flavors.myflavor.ids[0]
   security_groups   = [var.security_group]
-  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
+  availability_zone = data.huaweicloud_availability_zones.myaz.names[1]
   admin_pass        = var.password
-  network {
-    uuid  = huaweicloud_vpc_subnet.subnet_1.id
-    fixed_ip_v4  =   var.oracle_2_ip_1
-    source_dest_check  =  false
-  }
+
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_2.id
     fixed_ip_v4  =   var.oracle_2_ip_2
+    source_dest_check  =  false
+  }
+    network {
+    uuid  = huaweicloud_vpc_subnet.subnet_1.id
+    fixed_ip_v4  =   var.oracle_2_ip_1
     source_dest_check  =  false
   }
 
@@ -172,25 +175,47 @@ resource "huaweicloud_vpc_eip" "myeip" {
 resource "huaweicloud_compute_eip_associate" "associated_1" {
   public_ip   = huaweicloud_vpc_eip.myeip[0].address
   instance_id = huaweicloud_compute_instance.mycompute_1.id
+  //fixed_ip    = huaweicloud_compute_instance.mycompute_1.network.1.fixed_ip_v4
 }
 
 resource "huaweicloud_compute_eip_associate" "associated" {
   public_ip   = huaweicloud_vpc_eip.myeip[1].address
   instance_id = huaweicloud_compute_instance.mycompute_2.id
+  //fixed_ip    = huaweicloud_compute_instance.mycompute_2.network.1.fixed_ip_v4
 }
 //申请虚拟IP地址并绑定ECS服务器对应的端口
+resource "huaweicloud_networking_vip" "scan_vip" {
+  network_id = huaweicloud_vpc_subnet.subnet_1.id
+  ip_address = var.scan_vip
+}
 resource "huaweicloud_networking_vip" "vip_1" {
   network_id = huaweicloud_vpc_subnet.subnet_1.id
-  count = 3
+  ip_address = var.vip_1
 }
-
+resource "huaweicloud_networking_vip" "vip_2" {
+  network_id = huaweicloud_vpc_subnet.subnet_1.id
+  ip_address = var.vip_2
+}
 # associate ports to the vip
-resource "huaweicloud_networking_vip_associate" "vip_associated" {
-  count    = 3
-  vip_id   = huaweicloud_networking_vip.vip_1[count.index].id
+resource "huaweicloud_networking_vip_associate" "vip_associated_scan" {
+  vip_id   = huaweicloud_networking_vip.scan_vip.id
   port_ids = [
-    huaweicloud_compute_instance.mycompute_1.network.0.port,
-    huaweicloud_compute_instance.mycompute_2.network.0.port
+    huaweicloud_compute_instance.mycompute_1.network.1.port,
+    huaweicloud_compute_instance.mycompute_2.network.1.port
+  ]
+}
+resource "huaweicloud_networking_vip_associate" "vip_associated_vip_1" {
+  vip_id   = huaweicloud_networking_vip.vip_1.id
+  port_ids = [
+    huaweicloud_compute_instance.mycompute_1.network.1.port,
+    huaweicloud_compute_instance.mycompute_2.network.1.port
+  ]
+}
+resource "huaweicloud_networking_vip_associate" "vip_associated_vip_2" {
+  vip_id   = huaweicloud_networking_vip.vip_2.id
+  port_ids = [
+    huaweicloud_compute_instance.mycompute_1.network.1.port,
+    huaweicloud_compute_instance.mycompute_2.network.1.port
   ]
 }
 //共享磁盘
