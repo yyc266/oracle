@@ -40,68 +40,188 @@ resource "huaweicloud_vpc_subnet" "subnet_1" {
   primary_dns = var.primary_dns
 }
 
+resource "huaweicloud_vpc_subnet" "subnet_2" {
+  vpc_id      = huaweicloud_vpc.vpc_1.id
+  name        = var.subnet2_name
+  cidr        = var.subnet2_cidr
+  gateway_ip  = var.subnet2_gateway
+  primary_dns = var.primary2_dns
+}
+
+//安全组
+# Create a Security Group
+resource "huaweicloud_networking_secgroup" "oracle_sg" {
+  name   = var.security_group
+}
+
+
+
+# Create a Security Group Rule 
+
+resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_1" {
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  ports             = "22,5901-5910,3389"
+  remote_ip_prefix  = "0.0.0.0/0"
+}
+
+resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_2" {
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          =  "tcp"
+  remote_ip_prefix  = "169.254.0.0/16"
+}
+
+resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_3" {
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  remote_ip_prefix  = "192.168.1.0/24"
+}
+
+resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_4" {
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  remote_ip_prefix  = "192.168.64.0/18"
+}
 //创建两台ECS实例
 data "huaweicloud_availability_zones" "myaz" {}
 
 data "huaweicloud_compute_flavors" "myflavor" {
-  depends_on = [local_file.save_inventory]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   performance_type  = "normal"
-  cpu_core_count    = 2
-  memory_size       = 4
-  user_data  = file("user1.sh")
+  cpu_core_count    = var.cpu
+  memory_size       = var.memory
 }
 
-data "huaweicloud_images_image" "myimage" {
-  name        = "Ubuntu 18.04 server 64bit"
-  most_recent = true
-}
 
-resource "huaweicloud_compute_instance" "mycompute" {
-  name              = "mycompute_${count.index}"
-  image_id          = data.huaweicloud_images_image.myimage.id
+
+resource "huaweicloud_compute_instance" "mycompute_1" {
+  name              = "oracle_1"
+  image_id          = "67f433d8-ed0e-4321-a8a2-a71838539e09"
   flavor_id         = data.huaweicloud_compute_flavors.myflavor.ids[0]
-  security_groups   = ["default"]
+  security_groups   = [var.security_group]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
+  admin_pass        = var.password
   network {
-    uuid = huaweicloud_vpc_subnet.subnet_1.id
+    uuid  = huaweicloud_vpc_subnet.subnet_1.id
+    fixed_ip_v4  =  var.oracle_1_ip_1
+    source_dest_check  =  false
+
   }
-  count = 2
+  network {
+    uuid  = huaweicloud_vpc_subnet.subnet_2.id
+    fixed_ip_v4  =  var.oracle_1_ip_2
+    source_dest_check  =  false
+  }
+
 }
 
+
+resource "huaweicloud_compute_instance" "mycompute_2" {
+  name              = "oracle_2"
+  image_id          = "67f433d8-ed0e-4321-a8a2-a71838539e09"
+  flavor_id         = data.huaweicloud_compute_flavors.myflavor.ids[0]
+  security_groups   = [var.security_group]
+  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
+  admin_pass        = var.password
+  network {
+    uuid  = huaweicloud_vpc_subnet.subnet_1.id
+    fixed_ip_v4  =   var.oracle_2_ip_1
+    source_dest_check  =  false
+  }
+  network {
+    uuid  = huaweicloud_vpc_subnet.subnet_2.id
+    fixed_ip_v4  =   var.oracle_2_ip_2
+    source_dest_check  =  false
+  }
+
+}
+
+//服务器组
+
+resource "huaweicloud_compute_servergroup" "oracle-group" {
+  name     = "oracle-group"
+  policies = ["anti-affinity"]
+  members  = [
+    huaweicloud_compute_instance.mycompute_1.id,
+    huaweicloud_compute_instance.mycompute_2.id,
+  ]
+}
+
+//EIP
+resource "huaweicloud_vpc_eip" "myeip" {
+  publicip {
+    type = "5_bgp"
+  }
+  bandwidth {
+    name        = "mybandwidth"
+    size        = 8
+    share_type  = "PER"
+    charge_mode = "traffic"
+  }
+  count  = 2
+}
+
+resource "huaweicloud_compute_eip_associate" "associated_1" {
+  public_ip   = huaweicloud_vpc_eip.myeip[0].address
+  instance_id = huaweicloud_compute_instance.mycompute_1.id
+}
+
+resource "huaweicloud_compute_eip_associate" "associated" {
+  public_ip   = huaweicloud_vpc_eip.myeip[1].address
+  instance_id = huaweicloud_compute_instance.mycompute_2.id
+}
 //申请虚拟IP地址并绑定ECS服务器对应的端口
 resource "huaweicloud_networking_vip" "vip_1" {
   network_id = huaweicloud_vpc_subnet.subnet_1.id
+  count = 3
 }
 
 # associate ports to the vip
 resource "huaweicloud_networking_vip_associate" "vip_associated" {
-  vip_id   = huaweicloud_networking_vip.vip_1.id
+  count    = 3
+  vip_id   = huaweicloud_networking_vip.vip_1[count.index].id
   port_ids = [
-    huaweicloud_compute_instance.mycompute[0].network.0.port,
-    huaweicloud_compute_instance.mycompute[1].network.0.port
+    huaweicloud_compute_instance.mycompute_1.network.0.port,
+    huaweicloud_compute_instance.mycompute_2.network.0.port
   ]
 }
 //共享磁盘
-resource "huaweicloud_evs_volume" "myvolume" {
-  name              = "myvolume_${count.index}"
+resource "huaweicloud_evs_volume" "ocr" {
+  name              = "oracle-10-000${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
+  device_type       = "SCSI"
   volume_type       = "SAS"
   multiattach       = true
   size              = 10
-  count             = 2
+  count             = 3
 }
 
-resource "huaweicloud_compute_volume_attach" "attached" {
+resource "huaweicloud_evs_volume" "mgmt" {
+  name              = "oracle-100-000${count.index}"
+  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
+  device_type       = "SCSI"
+  volume_type       = "SAS"
+  multiattach       = true
+  size              = 100
+  count             = 1
+}
 
-  instance_ids =  [
-     huaweicloud_compute_instance.mycompute[0].id,
-     huaweicloud_compute_instance.mycompute[1].id
-  ]
-  volume_ids   =   [
-    huaweicloud_evs_volume.myvolume[0].id,
-    huaweicloud_evs_volume.myvolume[1].id
-  ]
+resource "huaweicloud_evs_volume" "data_flash" {
+  name              = "oracle-1000-000${count.index}"
+  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
+  device_type       = "SCSI"
+  volume_type       = "SAS"
+  multiattach       = true
+  size              = 1000
+  count             = 2
 }
 
 //user_data
@@ -118,11 +238,62 @@ resource "local_file" "save_inventory" {
   filename = "./user1.sh"
 }
 
-resource "local_file" "save_inventory" {
-  content  = "${data.template_file.user_data.rendered}"
-  filename = "./user1.sh"
+//执行脚本
+
+resource "null_resource" "provision_1" {
+  depends_on = []
+
+  provisioner "file" {
+    connection {
+    type     = "ssh"
+    user     = "root"
+    password = var.password
+    host        = huaweicloud_vpc_eip.myeip[0].address
+    }
+    source = "./user1.sh"
+    destination = "/tmp/user1.sh"
+  }
+  provisioner "remote-exec" {
+    connection {
+    type     = "ssh"
+    user     = "root"
+    password = var.password
+    host        = huaweicloud_vpc_eip.myeip[0].address
+    }
+
+    inline = [
+      //format("sudo sh %s","${data.template_file.user_data.rendered}")
+      "sudo sh /tmp/user1.sh"
+    ]
+  }
 }
 
+resource "null_resource" "provision_2" {
+  depends_on = []
 
+  provisioner "file" {
+    connection {
+    type     = "ssh"
+    user     = "root"
+    password = var.password
+    host        = huaweicloud_vpc_eip.myeip[1].address
+    }
+    source = "./user1.sh"
+    destination = "/tmp/user1.sh"
+  }
+  provisioner "remote-exec" {
+    connection {
+    type     = "ssh"
+    user     = "root"
+    password = var.password
+    host        = huaweicloud_vpc_eip.myeip[1].address
+    }
+
+    inline = [
+      //format("sudo sh %s","${data.template_file.user_data.rendered}")
+      "sudo sh /tmp/user1.sh"
+    ]
+  }
+}
 
 
