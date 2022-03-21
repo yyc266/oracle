@@ -6,18 +6,18 @@ variable "region" {
 
 variable "access_key" {
   description = "access_key"
-  default     = "RI9VZLDJNNBWBEDVNSC3"
+  default     = "please input"
   type        = string
 }
 
 variable "secret_key" {
   description = "secret_key"
-  default     = "CWPAqrUT8Oq27OpnODYLP91KhNluYnMDDhDvGIoV"
+  default     = "please input"
   type        = string
 }
 
 variable "vpc_name" {
-  default = "vpc-oracle-yyc"
+  default = "vpc-oracle-b"
 }
 variable "vpc_cidr" {
   default = "192.168.0.0/16"
@@ -51,17 +51,17 @@ variable "primary2_dns" {
 
 //安全组
 variable "security_group" {
-  default = "sg-oracle-yyc"
+  default = "sg-oracle-a"
 }
 
 //ecs资源
 variable "cpu" {
-  default = 2
+  default = 4
   type =  number
   description = "core"
 }
 variable "memory" {
-  default = 4
+  default = 8
   type =  number
   description = "GB"
 }
@@ -88,11 +88,6 @@ variable "oracle_2_ip_2" {
   type        = string
 }
 //script
-variable "db_name" {
-  description = "The password of magento db name"
-  default     = "magento_db2"
-  type        = string
-}
 
 
 variable "password" {
@@ -116,5 +111,34 @@ variable "vip_1" {
 variable "vip_2" {
   description = "vip_2"
   default     = "192.168.1.243"
+  type        = string
+}
+//kernel_shmall,kernel_shmax
+variable "kernel_shmall" {
+  description = "(单位B)计算公式为：kernel.shmax/4094，最小值为2097152"
+  default     = "1073741824"
+  type        = string
+}
+variable "kernel_shmax" {
+  description = "要大于数据库的MEMORY_MAX_TARGET的值，推荐的计算公式为：机器内存总量（单位B）*60%"
+  default     = "4398046511104"
+  type        = string
+}
+
+variable "oracle_memlock" {
+  description = "参数推荐的设置值为：机器的内存总量（KB）*90%"
+  default     = "7549747"
+  type        = string
+}
+
+//hostname
+variable "oracle_1" {
+  description = "ecs 1主机名"
+  default     = "oracle-1"
+  type        = string
+}
+variable "oracle_2" {
+  description = "ecs 2主机名"
+  default     = "oracle-2"
   type        = string
 }

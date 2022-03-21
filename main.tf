@@ -103,60 +103,62 @@ data "huaweicloud_compute_flavors" "myflavor" {
 
 
 resource "huaweicloud_compute_instance" "mycompute_1" {
-  name              = "oracle_1"
+  name              = var.oracle_1
   image_id          = "67f433d8-ed0e-4321-a8a2-a71838539e09"
   flavor_id         = data.huaweicloud_compute_flavors.myflavor.ids[0]
   security_groups   = [var.security_group]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
-
-  network {
-    uuid  = huaweicloud_vpc_subnet.subnet_2.id
-    fixed_ip_v4  =  var.oracle_1_ip_2
-    source_dest_check  =  false
-  }
-
+  
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_1.id
     fixed_ip_v4  =  var.oracle_1_ip_1
     source_dest_check  =  false
 
   }
+  network {
+    uuid  = huaweicloud_vpc_subnet.subnet_2.id
+    fixed_ip_v4  =  var.oracle_1_ip_2
+    source_dest_check  =  false
+  }
+
+
 
 }
 
 
 resource "huaweicloud_compute_instance" "mycompute_2" {
-  name              = "oracle_2"
+  name              = var.oracle_2
   image_id          = "67f433d8-ed0e-4321-a8a2-a71838539e09"
   flavor_id         = data.huaweicloud_compute_flavors.myflavor.ids[0]
   security_groups   = [var.security_group]
-  availability_zone = data.huaweicloud_availability_zones.myaz.names[1]
+  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
-
+  
+  network {
+    uuid  = huaweicloud_vpc_subnet.subnet_1.id
+    fixed_ip_v4  =   var.oracle_2_ip_1
+    source_dest_check  =  false
+  }
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_2.id
     fixed_ip_v4  =   var.oracle_2_ip_2
     source_dest_check  =  false
   }
-    network {
-    uuid  = huaweicloud_vpc_subnet.subnet_1.id
-    fixed_ip_v4  =   var.oracle_2_ip_1
-    source_dest_check  =  false
-  }
+
 
 }
 
 //服务器组
 
-resource "huaweicloud_compute_servergroup" "oracle-group" {
-  name     = "oracle-group"
-  policies = ["anti-affinity"]
-  members  = [
-    huaweicloud_compute_instance.mycompute_1.id,
-    huaweicloud_compute_instance.mycompute_2.id,
-  ]
-}
+# resource "huaweicloud_compute_servergroup" "oracle-group" {
+#   name     = "oracle-group"
+#   policies = ["anti-affinity"]
+#   members  = [
+#     huaweicloud_compute_instance.mycompute_1.id,
+#     huaweicloud_compute_instance.mycompute_2.id,
+#   ]
+# }
 
 //EIP
 resource "huaweicloud_vpc_eip" "myeip" {
@@ -200,22 +202,22 @@ resource "huaweicloud_networking_vip" "vip_2" {
 resource "huaweicloud_networking_vip_associate" "vip_associated_scan" {
   vip_id   = huaweicloud_networking_vip.scan_vip.id
   port_ids = [
-    huaweicloud_compute_instance.mycompute_1.network.1.port,
-    huaweicloud_compute_instance.mycompute_2.network.1.port
+    huaweicloud_compute_instance.mycompute_1.network.0.port,
+    huaweicloud_compute_instance.mycompute_2.network.0.port
   ]
 }
 resource "huaweicloud_networking_vip_associate" "vip_associated_vip_1" {
   vip_id   = huaweicloud_networking_vip.vip_1.id
   port_ids = [
-    huaweicloud_compute_instance.mycompute_1.network.1.port,
-    huaweicloud_compute_instance.mycompute_2.network.1.port
+    huaweicloud_compute_instance.mycompute_1.network.0.port,
+    huaweicloud_compute_instance.mycompute_2.network.0.port
   ]
 }
 resource "huaweicloud_networking_vip_associate" "vip_associated_vip_2" {
   vip_id   = huaweicloud_networking_vip.vip_2.id
   port_ids = [
-    huaweicloud_compute_instance.mycompute_1.network.1.port,
-    huaweicloud_compute_instance.mycompute_2.network.1.port
+    huaweicloud_compute_instance.mycompute_1.network.0.port,
+    huaweicloud_compute_instance.mycompute_2.network.0.port
   ]
 }
 //共享磁盘
@@ -254,7 +256,18 @@ data "template_file" "user_data" {
   template = "${file("user_data.sh")}"
 
   vars = {
-    DB_NAME = var.db_name
+    ORACLE_1_IP_1 = var.oracle_1_ip_1
+    ORACLE_2_IP_1 = var.oracle_2_ip_1
+    ORACLE_1_IP_2 = var.oracle_1_ip_2
+    ORACLE_2_IP_2 = var.oracle_2_ip_2
+    VIP_1 = var.vip_1
+    VIP_2 = var.vip_2
+    SCAN_VIP = var.scan_vip
+    KERNEL_SHMALL = var.kernel_shmall
+    KERNEL_SHMAX = var.kernel_shmax
+    ORACLE_MEMLOCK = var.oracle_memlock
+    PASSWORD = var.password
+    ORACLE_1 = var.oracle_1
   }
 }
 
@@ -266,7 +279,7 @@ resource "local_file" "save_inventory" {
 //执行脚本
 
 resource "null_resource" "provision_1" {
-  depends_on = []
+  depends_on = [huaweicloud_compute_eip_associate.associated,huaweicloud_compute_eip_associate.associated_1,local_file.save_inventory]
 
   provisioner "file" {
     connection {
@@ -294,7 +307,7 @@ resource "null_resource" "provision_1" {
 }
 
 resource "null_resource" "provision_2" {
-  depends_on = []
+  depends_on = [huaweicloud_compute_eip_associate.associated,huaweicloud_compute_eip_associate.associated_1]
 
   provisioner "file" {
     connection {
@@ -321,4 +334,32 @@ resource "null_resource" "provision_2" {
   }
 }
 
+resource "null_resource" "provision_3" {
+ 
+  provisioner "file" {
+    connection {
+    type     = "ssh"
+    user     = "root"
+    password = var.password
+    host        = huaweicloud_vpc_eip.myeip[0].address
+    }
+    source = "./after_apply.sh"
+    destination = "/tmp/after_apply.sh"
+  }
 
+}
+
+resource "null_resource" "provision_4" {
+ 
+  provisioner "file" {
+    connection {
+    type     = "ssh"
+    user     = "root"
+    password = var.password
+    host        = huaweicloud_vpc_eip.myeip[1].address
+    }
+    source = "./after_apply.sh"
+    destination = "/tmp/after_apply.sh"
+  }
+
+}
