@@ -1,57 +1,28 @@
-terraform {
-  required_providers {
-  huaweicloud = {
-    source = "local-registry/huaweicloud/huaweicloud"
-    version = "= 1.34.1"
-    }
-  random = {
-    source = "local-registry/hashicorp/random"
-    version = "= 3.1.0"
-  }
-  null = {
-    source = "local-registry/hashicorp/null"
-    version = "= 3.1.0"
-  }
- template = {
-    source = "local-registry/hashicorp/template"
-    version = "= 2.2.0"
-  }
- local = {
-    source = "local-registry/hashicorp/local"
-    version = "= 2.1.0"
-  }
-  }
- }
-provider "huaweicloud" {
-  region     = var.region
-  access_key = var.access_key
-  secret_key = var.secret_key
-}
 //配置网络
 resource "huaweicloud_vpc" "vpc_1" {
-  name = var.vpc_name
-  cidr = var.vpc_cidr
+  name = "${var.template_name}-vpc"
+  cidr = "192.168.0.0/16"
 }
 resource "huaweicloud_vpc_subnet" "subnet_1" {
   vpc_id      = huaweicloud_vpc.vpc_1.id
-  name        = var.subnet_name
-  cidr        = var.subnet_cidr
-  gateway_ip  = var.subnet_gateway
-  primary_dns = var.primary_dns
+  name        = "${var.template_name}-subnet-public"
+  cidr        = "192.168.1.0/24"
+  gateway_ip  = "192.168.1.1"
+  primary_dns = "100.125.1.250"
 }
 
 resource "huaweicloud_vpc_subnet" "subnet_2" {
   vpc_id      = huaweicloud_vpc.vpc_1.id
-  name        = var.subnet2_name
-  cidr        = var.subnet2_cidr
-  gateway_ip  = var.subnet2_gateway
-  primary_dns = var.primary2_dns
+  name        = "${var.template_name}-subnet-private"
+  cidr        = "192.168.64.0/18"
+  gateway_ip  = "192.168.64.1"
+  primary_dns = "100.125.1.250"
 }
 
 //安全组
 # Create a Security Group
 resource "huaweicloud_networking_secgroup" "oracle_sg" {
-  name   = var.security_group
+  name   = "${var.template_name}-secgroup"
 }
 
 
@@ -63,7 +34,7 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_1" {
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
-  ports             = "22,5901-5910,3389"
+  ports             = "5901-5910,3389"
   remote_ip_prefix  = "0.0.0.0/0"
 }
 
@@ -90,75 +61,63 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_4" {
   protocol          = "tcp"
   remote_ip_prefix  = "192.168.64.0/18"
 }
+resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_5" {
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  ports             = "22"
+  remote_ip_prefix  = "0.0.0.0/0"
+}
 //创建两台ECS实例
 data "huaweicloud_availability_zones" "myaz" {}
 
-data "huaweicloud_compute_flavors" "myflavor" {
-  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
-  performance_type  = "normal"
-  cpu_core_count    = var.cpu
-  memory_size       = var.memory
-}
-
-
 
 resource "huaweicloud_compute_instance" "mycompute_1" {
-  name              = var.oracle_1
+  name              = "${var.template_name}-oracle-01"
   image_id          = "67f433d8-ed0e-4321-a8a2-a71838539e09"
-  flavor_id         = data.huaweicloud_compute_flavors.myflavor.ids[0]
-  security_groups   = [var.security_group]
+  flavor_id         = var.flavor_id
+  security_groups   = ["${var.template_name}-secgroup"]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
   
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_1.id
-    fixed_ip_v4  =  var.oracle_1_ip_1
+    fixed_ip_v4  =   "192.168.1.168"
     source_dest_check  =  false
 
   }
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_2.id
-    fixed_ip_v4  =  var.oracle_1_ip_2
+    fixed_ip_v4  = "192.168.117.79"
     source_dest_check  =  false
   }
-
-
 
 }
 
 
 resource "huaweicloud_compute_instance" "mycompute_2" {
-  name              = var.oracle_2
+  name              = "${var.template_name}-oracle-02"
   image_id          = "67f433d8-ed0e-4321-a8a2-a71838539e09"
-  flavor_id         = data.huaweicloud_compute_flavors.myflavor.ids[0]
-  security_groups   = [var.security_group]
+  flavor_id         = var.flavor_id
+  security_groups   = ["${var.template_name}-secgroup"]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
   
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_1.id
-    fixed_ip_v4  =   var.oracle_2_ip_1
+    fixed_ip_v4  =  "192.168.1.63"
     source_dest_check  =  false
   }
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_2.id
-    fixed_ip_v4  =   var.oracle_2_ip_2
+    fixed_ip_v4  =   "192.168.66.21"
     source_dest_check  =  false
   }
 
 
 }
 
-//服务器组
-
-# resource "huaweicloud_compute_servergroup" "oracle-group" {
-#   name     = "oracle-group"
-#   policies = ["anti-affinity"]
-#   members  = [
-#     huaweicloud_compute_instance.mycompute_1.id,
-#     huaweicloud_compute_instance.mycompute_2.id,
-#   ]
-# }
 
 //EIP
 resource "huaweicloud_vpc_eip" "myeip" {
@@ -166,7 +125,7 @@ resource "huaweicloud_vpc_eip" "myeip" {
     type = "5_bgp"
   }
   bandwidth {
-    name        = "mybandwidth"
+    name        = "${var.template_name}-bandwidth"
     size        = 8
     share_type  = "PER"
     charge_mode = "traffic"
@@ -177,26 +136,24 @@ resource "huaweicloud_vpc_eip" "myeip" {
 resource "huaweicloud_compute_eip_associate" "associated_1" {
   public_ip   = huaweicloud_vpc_eip.myeip[0].address
   instance_id = huaweicloud_compute_instance.mycompute_1.id
-  //fixed_ip    = huaweicloud_compute_instance.mycompute_1.network.1.fixed_ip_v4
 }
 
 resource "huaweicloud_compute_eip_associate" "associated" {
   public_ip   = huaweicloud_vpc_eip.myeip[1].address
   instance_id = huaweicloud_compute_instance.mycompute_2.id
-  //fixed_ip    = huaweicloud_compute_instance.mycompute_2.network.1.fixed_ip_v4
 }
 //申请虚拟IP地址并绑定ECS服务器对应的端口
 resource "huaweicloud_networking_vip" "scan_vip" {
   network_id = huaweicloud_vpc_subnet.subnet_1.id
-  ip_address = var.scan_vip
+  ip_address = "192.168.1.241"
 }
 resource "huaweicloud_networking_vip" "vip_1" {
   network_id = huaweicloud_vpc_subnet.subnet_1.id
-  ip_address = var.vip_1
+  ip_address = "192.168.1.242"
 }
 resource "huaweicloud_networking_vip" "vip_2" {
   network_id = huaweicloud_vpc_subnet.subnet_1.id
-  ip_address = var.vip_2
+  ip_address = "192.168.1.243"
 }
 # associate ports to the vip
 resource "huaweicloud_networking_vip_associate" "vip_associated_scan" {
@@ -222,7 +179,7 @@ resource "huaweicloud_networking_vip_associate" "vip_associated_vip_2" {
 }
 //共享磁盘
 resource "huaweicloud_evs_volume" "ocr" {
-  name              = "oracle-10-000${count.index}"
+  name              = "${var.template_name}-10-000${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
@@ -232,7 +189,7 @@ resource "huaweicloud_evs_volume" "ocr" {
 }
 
 resource "huaweicloud_evs_volume" "mgmt" {
-  name              = "oracle-100-000${count.index}"
+  name              = "${var.template_name}-100-000${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
@@ -242,7 +199,7 @@ resource "huaweicloud_evs_volume" "mgmt" {
 }
 
 resource "huaweicloud_evs_volume" "data_flash" {
-  name              = "oracle-1000-000${count.index}"
+  name              = "${var.template_name}-1000-000${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
@@ -253,21 +210,13 @@ resource "huaweicloud_evs_volume" "data_flash" {
 
 //user_data
 data "template_file" "user_data" {
-  template = "${file("user_data.sh")}"
+  template = file("./user_data.sh")
 
   vars = {
-    ORACLE_1_IP_1 = var.oracle_1_ip_1
-    ORACLE_2_IP_1 = var.oracle_2_ip_1
-    ORACLE_1_IP_2 = var.oracle_1_ip_2
-    ORACLE_2_IP_2 = var.oracle_2_ip_2
-    VIP_1 = var.vip_1
-    VIP_2 = var.vip_2
-    SCAN_VIP = var.scan_vip
-    KERNEL_SHMALL = var.kernel_shmall
-    KERNEL_SHMAX = var.kernel_shmax
-    ORACLE_MEMLOCK = var.oracle_memlock
-    PASSWORD = var.password
-    ORACLE_1 = var.oracle_1
+    PASSWORD  = var.password
+    ORACLE_01 = "${var.template_name}-oracle-01"
+    ORACLE_02 = "${var.template_name}-oracle-02"
+    TEMPLATE_NAME = var.template_name
   }
 }
 
@@ -280,13 +229,13 @@ resource "local_file" "save_inventory" {
 
 resource "null_resource" "provision_1" {
   depends_on = [huaweicloud_compute_eip_associate.associated,huaweicloud_compute_eip_associate.associated_1,local_file.save_inventory]
-
+  count      = 2
   provisioner "file" {
     connection {
     type     = "ssh"
     user     = "root"
     password = var.password
-    host        = huaweicloud_vpc_eip.myeip[0].address
+    host        = huaweicloud_vpc_eip.myeip[count.index].address
     }
     source = "./user1.sh"
     destination = "/tmp/user1.sh"
@@ -296,70 +245,22 @@ resource "null_resource" "provision_1" {
     type     = "ssh"
     user     = "root"
     password = var.password
-    host        = huaweicloud_vpc_eip.myeip[0].address
+    host        = huaweicloud_vpc_eip.myeip[count.index].address
     }
 
     inline = [
-      //format("sudo sh %s","${data.template_file.user_data.rendered}")
       "sudo sh /tmp/user1.sh"
     ]
   }
 }
+
+
 
 resource "null_resource" "provision_2" {
-  depends_on = [huaweicloud_compute_eip_associate.associated,huaweicloud_compute_eip_associate.associated_1]
+  depends_on = [null_resource.provision_1]
 
-  provisioner "file" {
-    connection {
-    type     = "ssh"
-    user     = "root"
-    password = var.password
-    host        = huaweicloud_vpc_eip.myeip[1].address
-    }
-    source = "./user1.sh"
-    destination = "/tmp/user1.sh"
-  }
-  provisioner "remote-exec" {
-    connection {
-    type     = "ssh"
-    user     = "root"
-    password = var.password
-    host        = huaweicloud_vpc_eip.myeip[1].address
-    }
-
-    inline = [
-      //format("sudo sh %s","${data.template_file.user_data.rendered}")
-      "sudo sh /tmp/user1.sh"
-    ]
-  }
-}
-
-resource "null_resource" "provision_3" {
- 
-  provisioner "file" {
-    connection {
-    type     = "ssh"
-    user     = "root"
-    password = var.password
-    host        = huaweicloud_vpc_eip.myeip[0].address
-    }
-    source = "./after_apply.sh"
-    destination = "/tmp/after_apply.sh"
-  }
-
-}
-
-resource "null_resource" "provision_4" {
- 
-  provisioner "file" {
-    connection {
-    type     = "ssh"
-    user     = "root"
-    password = var.password
-    host        = huaweicloud_vpc_eip.myeip[1].address
-    }
-    source = "./after_apply.sh"
-    destination = "/tmp/after_apply.sh"
+  provisioner "local-exec" {
+     command = format("hcloud VPC DeleteSecurityGroupRule/v3  --cli-access-key=%s --cli-secret-key=%s --cli-region=%s --security_group_rule_id=%s",var.access_key,var.secret_key,var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5.id)
   }
 
 }
