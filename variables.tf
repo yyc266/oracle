@@ -22,14 +22,11 @@ variable "template_name" {
   type        =  string
 }
 
-
 variable "password" {
   description = "root/oracle/grid password"
   default     = "Aa!123456"
   type        = string
 }
-
-
 
 variable "flavor_id" {
   description = "规格"

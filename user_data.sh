@@ -1,5 +1,11 @@
 #!/bin/bash
-
+#4.1
+if  [ `hostname` == "${ORACLE_01}"  ]
+    then
+       echo "HOSTNAME=${ORACLE_01}"   >> /etc/sysconfig/network
+    else
+       echo "HOSTNAME=${ORACLE_02}"   >> /etc/sysconfig/network
+fi
 #4.2 hosts
 cat >> /etc/hosts << EOF
 #public ip 
@@ -171,22 +177,22 @@ cat >> /etc/systemd/logind.conf  << EOF
 RemoveIPC=no
 EOF
 
-yum -y install bc gcc gcc-c++  binutils  make gdb cmake  \ 
-       glibc ksh elfutils-libelf elfutils-libelf-devel \
-       fontconfig-devel glibc-devel libaio libaio-devel \
-       libXrender libXrender-devel libX11 libXau sysstat \ 
-       libXi libXtst libgcc librdmacm-devel libstdc++ \
-       libstdc++-devel libxcb net-tools nfs-utils compat-libcap1 \
-       compat-libstdc++  smartmontools  targetcli python python-configshell \
-       python-rtslib python-six  unixODBC unixODBC-devel
-yum groupinstall -y "X Window System"
-yum groupinstall -y "GNOME Desktop"
+# yum -y install bc gcc gcc-c++  binutils  make gdb cmake  \ 
+#        glibc ksh elfutils-libelf elfutils-libelf-devel \
+#        fontconfig-devel glibc-devel libaio libaio-devel \
+#        libXrender libXrender-devel libX11 libXau sysstat \ 
+#        libXi libXtst libgcc librdmacm-devel libstdc++ \
+#        libstdc++-devel libxcb net-tools nfs-utils compat-libcap1 \
+#        compat-libstdc++  smartmontools  targetcli python python-configshell \
+#        python-rtslib python-six  unixODBC unixODBC-devel
+# yum groupinstall -y "X Window System"
+# yum groupinstall -y "GNOME Desktop"
 
-yum install -y tigervnc-server
-cat >> /etc/sysconfig/vncservers  << EOF
-VNCSERVERS="2:root"
-VNCSERVERARGS[2]="-geometry 1024x768 -nolisten tcp"
-EOF
+# yum install -y tigervnc-server
+# cat >> /etc/sysconfig/vncservers  << EOF
+# VNCSERVERS="2:root"
+# VNCSERVERARGS[2]="-geometry 1024x768 -nolisten tcp"
+# EOF
 
 #systemctl disable ntpd.service
 #systemctl stop ntpd.service
