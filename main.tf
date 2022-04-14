@@ -1,6 +1,6 @@
 //配置网络
 resource "huaweicloud_vpc" "vpc_1" {
-  name = "${var.template_name}-vpc"
+  name = "${var.template_name}-${var.vpc_name}"
   cidr = "192.168.0.0/16"
 }
 
@@ -69,13 +69,34 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_5" {
 //创建两台ECS实例
 data "huaweicloud_availability_zones" "myaz" {}
 
+data "huaweicloud_images_image" "centos7" {
+  name        = "CentOS 7.6 64bit"
+  most_recent = true
+}
+
+data "huaweicloud_compute_flavors" "myflavor" {
+  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
+  performance_type  = "normal"
+  cpu_core_count    = var.cpu
+  memory_size       = var.memory
+}
+
+resource "huaweicloud_compute_servergroup" "oracle_sg" {
+  name     = "${var.template_name}-servergroup"
+  policies = ["anti-affinity"]
+}
+
 resource "huaweicloud_compute_instance" "mycompute_1" {
-  name              = "${var.template_name}-oracle-01"
-  image_id          = "67f433d8-ed0e-4321-a8a2-a71838539e09"
-  flavor_id         = var.flavor_id
+  name              = "${var.template_name}-ecs01"
+  image_id          = data.huaweicloud_images_image.centos7.id
+  flavor_id         = data.huaweicloud_compute_flavors.myflavor.id
   security_groups   = ["${var.template_name}-secgroup"]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
+  system_disk_size = 100
+  scheduler_hints {
+    group = huaweicloud_compute_servergroup.oracle_sg.id
+  }
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_1.id
     fixed_ip_v4  =   "192.168.1.168"
@@ -89,12 +110,16 @@ resource "huaweicloud_compute_instance" "mycompute_1" {
 }
 
 resource "huaweicloud_compute_instance" "mycompute_2" {
-  name              = "${var.template_name}-oracle-02"
-  image_id          = "67f433d8-ed0e-4321-a8a2-a71838539e09"
-  flavor_id         = var.flavor_id
+  name              = "${var.template_name}-ecs02"
+  image_id          = data.huaweicloud_images_image.centos7.id
+  flavor_id         = data.huaweicloud_compute_flavors.myflavor.id
   security_groups   = ["${var.template_name}-secgroup"]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
+  system_disk_size = 100
+  scheduler_hints {
+    group = huaweicloud_compute_servergroup.oracle_sg.id
+  }
   network {
     uuid  = huaweicloud_vpc_subnet.subnet_1.id
     fixed_ip_v4  =  "192.168.1.63"
@@ -109,15 +134,18 @@ resource "huaweicloud_compute_instance" "mycompute_2" {
 }
 
 //EIP
+resource "huaweicloud_vpc_bandwidth" "bandwidth_1" {
+  name = "bandwidth_1"
+  size = 5
+}
+
 resource "huaweicloud_vpc_eip" "myeip" {
   publicip {
     type = "5_bgp"
   }
   bandwidth {
-    name        = "${var.template_name}-bandwidth"
-    size        = 8
-    share_type  = "PER"
-    charge_mode = "traffic"
+    share_type = "WHOLE"
+    id         = huaweicloud_vpc_bandwidth.bandwidth_1.id
   }
   count  = 2
 }
@@ -175,33 +203,43 @@ resource "huaweicloud_networking_vip_associate" "vip_associated_vip_2" {
 
 //共享磁盘
 resource "huaweicloud_evs_volume" "ocr" {
-  name              = "${var.template_name}-10-000${count.index}"
+  name              = "${var.template_name}-${var.evs_ocr}-${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
   multiattach       = true
-  size              = 10
+  size              = var.evs_ocr_size
   count             = 3
 }
 
 resource "huaweicloud_evs_volume" "mgmt" {
-  name              = "${var.template_name}-100-000${count.index}"
+  name              = "${var.template_name}-${var.evs_mgmt}-${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
   multiattach       = true
-  size              = 100
+  size              = var.evs_mgmt_size
+  count             = var.evs_mgmt_count
+}
+
+resource "huaweicloud_evs_volume" "data" {
+  name              = "${var.template_name}-${var.evs_data}-${count.index}"
+  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
+  device_type       = "SCSI"
+  volume_type       = "SAS"
+  multiattach       = true
+  size              = var.evs_data_size
   count             = 1
 }
 
-resource "huaweicloud_evs_volume" "data_flash" {
-  name              = "${var.template_name}-1000-000${count.index}"
+resource "huaweicloud_evs_volume" "flash" {
+  name              = "${var.template_name}-${var.evs_flash}-${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
   multiattach       = true
-  size              = 1000
-  count             = 2
+  size              = var.evs_flush_size
+  count             = 1
 }
 
 //user_data
@@ -250,6 +288,6 @@ resource "null_resource" "provision_1" {
 resource "null_resource" "provision_2" {
   depends_on = [null_resource.provision_1]
   provisioner "local-exec" {
-     command = format("hcloud VPC DeleteSecurityGroupRule/v3  --cli-access-key=%s --cli-secret-key=%s --cli-region=%s --security_group_rule_id=%s",var.access_key,var.secret_key,var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5.id)
+     command = format("hcloud VPC DeleteSecurityGroupRule/v3   --cli-region=%s --security_group_rule_id=%s",var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5.id)
   }
 }

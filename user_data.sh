@@ -7,7 +7,7 @@ if  [ `hostname` == "${ORACLE_01}"  ]
        echo "HOSTNAME=${ORACLE_02}"   >> /etc/sysconfig/network
 fi
 #4.2 hosts
-cat >> /etc/hosts << EOF
+cat > /etc/hosts << EOF
 #public ip 
 192.168.1.168 ${ORACLE_01} 
 192.168.1.63  ${ORACLE_02} 
@@ -198,5 +198,5 @@ EOF
 #systemctl stop ntpd.service
 #systemctl stop avahi-daemon.service
 
-# #reboot
+#reboot
 
