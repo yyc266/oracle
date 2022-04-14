@@ -89,7 +89,7 @@ resource "huaweicloud_compute_servergroup" "oracle_sg" {
 resource "huaweicloud_compute_instance" "mycompute_1" {
   name              = "${var.template_name}-ecs01"
   image_id          = data.huaweicloud_images_image.centos7.id
-  flavor_id         = data.huaweicloud_compute_flavors.myflavor.id
+  flavor_id         =  data.huaweicloud_compute_flavors.flavors.ids[0]
   security_groups   = ["${var.template_name}-secgroup"]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
@@ -112,7 +112,7 @@ resource "huaweicloud_compute_instance" "mycompute_1" {
 resource "huaweicloud_compute_instance" "mycompute_2" {
   name              = "${var.template_name}-ecs02"
   image_id          = data.huaweicloud_images_image.centos7.id
-  flavor_id         = data.huaweicloud_compute_flavors.myflavor.id
+  flavor_id         = data.huaweicloud_compute_flavors.flavors.ids[0]
   security_groups   = ["${var.template_name}-secgroup"]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
