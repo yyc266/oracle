@@ -21,7 +21,7 @@ data "huaweicloud_vpc" "vpc_1" {
 
 resource "huaweicloud_vpc_subnet" "subnet_1" {
   count = local.subnet_create
-  vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1.id : data.huaweicloud_vpc.vpc_1.id 
+  vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1.id[0] : data.huaweicloud_vpc.vpc_1.id[0] 
   name        = "${var.template_name}-${var.subnet1_name}"
   cidr        = var.subnet1_cidr
   gateway_ip  = var.subnet1_gateway
@@ -29,7 +29,7 @@ resource "huaweicloud_vpc_subnet" "subnet_1" {
 
 data "huaweicloud_vpc_subnet" "subnet_1" {
   count =  local.subnet_create == 1 ? 0 : 1
-  vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1.id : data.huaweicloud_vpc.vpc_1.id 
+  vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1.id[0] : data.huaweicloud_vpc.vpc_1.id[0] 
   name        = "${var.template_name}-${var.subnet1_name}"
   cidr        = var.subnet1_cidr
   gateway_ip  = var.subnet1_gateway
@@ -37,7 +37,7 @@ data "huaweicloud_vpc_subnet" "subnet_1" {
 
 resource "huaweicloud_vpc_subnet" "subnet_2" {
   count = local.subnet_create
-  vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1.id : data.huaweicloud_vpc.vpc_1.id 
+  vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1.id[0] : data.huaweicloud_vpc.vpc_1.id[0] 
   name        = "${var.template_name}-${var.subnet2_name}"
   cidr        = var.subnet2_cidr
   gateway_ip  = var.subnet2_gateway
@@ -45,7 +45,7 @@ resource "huaweicloud_vpc_subnet" "subnet_2" {
 
 data "huaweicloud_vpc_subnet" "subnet_2" {
   count =  local.subnet_create == 1 ? 0 : 1
-  vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1.id : data.huaweicloud_vpc.vpc_1.id 
+  vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1.id[0] : data.huaweicloud_vpc.vpc_1.id[0] 
   name        = "${var.template_name}-${var.subnet2_name}"
   cidr        = var.subnet2_cidr
   gateway_ip  = var.subnet2_gateway
@@ -59,7 +59,7 @@ resource "huaweicloud_networking_secgroup" "oracle_sg" {
 
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_1" {
   count = local.vpc_create
-  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id[0]
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
@@ -69,7 +69,7 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_1" {
 
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_2" {
   count = local.vpc_create
-  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id[0]
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          =  "tcp"
@@ -78,7 +78,7 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_2" {
 
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_3" {
   count = local.subnet_create
-  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id[0]
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
@@ -87,7 +87,7 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_3" {
 
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_4" {
   count = local.subnet_create
-  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id[0]
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
@@ -95,7 +95,7 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_4" {
 }
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_5" {
   count = local.subnet_create
-  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id
+  security_group_id = huaweicloud_networking_secgroup.oracle_sg.id[0]
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
@@ -135,12 +135,12 @@ resource "huaweicloud_compute_instance" "mycompute_1" {
     group = huaweicloud_compute_servergroup.oracle_sg.id
   }
   network {
-    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id : data.huaweicloud_vpc_subnet.subnet_1.id
+    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id[0] : data.huaweicloud_vpc_subnet.subnet_1.id[0]
     //fixed_ip_v4  =   "192.168.1.168"
     source_dest_check  =  false
   }
   network {
-    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2.id : data.huaweicloud_vpc_subnet.subnet_2.id
+    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2.id[0] : data.huaweicloud_vpc_subnet.subnet_2.id[0]
     //fixed_ip_v4  = "192.168.117.79"
     source_dest_check  =  false
   }
@@ -158,12 +158,12 @@ resource "huaweicloud_compute_instance" "mycompute_2" {
     group = huaweicloud_compute_servergroup.oracle_sg.id
   }
   network {
-    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id : data.huaweicloud_vpc_subnet.subnet_1.id
+    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id[0] : data.huaweicloud_vpc_subnet.subnet_1.id[0]
     //fixed_ip_v4  =  "192.168.1.63"
     source_dest_check  =  false
   }
   network {
-    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2.id : data.huaweicloud_vpc_subnet.subnet_2.id
+    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2.id[0] : data.huaweicloud_vpc_subnet.subnet_2.id[0]
     //fixed_ip_v4  =   "192.168.66.21"
     source_dest_check  =  false
   }
@@ -199,17 +199,17 @@ resource "huaweicloud_compute_eip_associate" "associated" {
 
 //申请虚拟IP地址并绑定ECS服务器对应的端口
 resource "huaweicloud_networking_vip" "scan_vip" {
-  network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id : data.huaweicloud_vpc_subnet.subnet_1.id
+  network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id[0] : data.huaweicloud_vpc_subnet.subnet_1.id[0]
   //ip_address = "192.168.1.241"
 }
 
 resource "huaweicloud_networking_vip" "vip_1" {
-  network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id : data.huaweicloud_vpc_subnet.subnet_1.id
+  network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id[0] : data.huaweicloud_vpc_subnet.subnet_1.id[0]
   //ip_address = "192.168.1.242"
 }
 
 resource "huaweicloud_networking_vip" "vip_2" {
-  network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id : data.huaweicloud_vpc_subnet.subnet_1.id
+  network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1.id[0] : data.huaweicloud_vpc_subnet.subnet_1.id[0]
   //ip_address = "192.168.1.243"
 }
 
