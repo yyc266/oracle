@@ -244,7 +244,9 @@ resource "huaweicloud_evs_volume" "flash" {
 
 //user_data
 data "template_file" "user_data" {
-  template = file("./user_data.sh")
+  //template = file("./user_data.sh")
+  template = var.oracle_version == "19c" ? file("./user_data_19c.sh") : file("./user_data_11g.sh")
+
   vars = {
     PASSWORD  = var.password
     ORACLE_01 = "${var.template_name}-oracle-01"
