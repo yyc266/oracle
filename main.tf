@@ -327,6 +327,6 @@ resource "null_resource" "provision_1" {
 resource "null_resource" "provision_2" {
   depends_on = [null_resource.provision_1]
   provisioner "local-exec" {
-     command = format("hcloud VPC DeleteSecurityGroupRule/v3   --cli-region=%s --security_group_rule_id=%s",var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5.id)
+     command = format("hcloud VPC DeleteSecurityGroupRule/v3   --cli-region=%s --security_group_rule_id=%s",var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5[0].id)
   }
 }
