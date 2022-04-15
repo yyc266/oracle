@@ -3,8 +3,8 @@
 }
 
 locals {
-  vpc_create = var.creste_type == 1 ? 1 : 0
-  subnet_create = var.creste_type == 1 || var.creste_type == 3 ? 1 : 0
+  vpc_create = var.create_type == 1 ? 1 : 0
+  subnet_create = var.create_type == 1 || var.creste_type == 3 ? 1 : 0
 }
 
 //配置网络

@@ -4,7 +4,7 @@ variable "region" {
   type        = string
 }
 
-variable "creste_type" {
+variable "create_type" {
   default = 1
   type =  number
   description = "1:在新的vpc创建ecs；2：在已有vpc和subnet创建ecs；3：在已有vpc里创建新的subnet和ecs"
