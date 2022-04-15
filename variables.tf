@@ -4,9 +4,15 @@ variable "region" {
   type        = string
 }
 
+variable "oracle_version" {
+  description = "oracle_version"
+  default     = "19c"
+  type        =  string
+}
+
 variable "template_name" {
   description = "The prefix name of the Huaweicloud service"
-  default     = "demo-a"
+  default     = "demo"
   type        =  string
 }
 
@@ -58,10 +64,10 @@ variable "evs_data_size" {
   description = "evs_data 磁盘大小"
 }
 
-variable "evs_flush_size" {
+variable "evs_flash_size" {
   default = 10
   type =  number
-  description = "evs_flush 磁盘大小"
+  description = "evs_flash 磁盘大小"
 }
 
 variable "evs_mgmt_size" {

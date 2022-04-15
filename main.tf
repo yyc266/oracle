@@ -238,7 +238,7 @@ resource "huaweicloud_evs_volume" "flash" {
   device_type       = "SCSI"
   volume_type       = "SAS"
   multiattach       = true
-  size              = var.evs_flush_size
+  size              = var.evs_flash_size
   count             = 1
 }
 
