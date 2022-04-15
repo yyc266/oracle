@@ -1,6 +1,4 @@
 #!/bin/bash
-touch aaa
-#!/bin/bash
 #4.1
 if  [ `hostname` == "${ORACLE_01}"  ]
     then
