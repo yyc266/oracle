@@ -57,6 +57,11 @@ resource "huaweicloud_networking_secgroup" "oracle_sg" {
   name   = "${var.template_name}-secgroup"
 }
 
+data "huaweicloud_networking_secgroup" "oracle_sg" {
+  count = local.vpc_create == 1 ? 0 : 1
+  name   = "${var.template_name}-secgroup"
+}
+
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_1" {
   count = local.vpc_create
   security_group_id = huaweicloud_networking_secgroup.oracle_sg[0].id
@@ -95,7 +100,7 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_4" {
 }
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_5" {
   //count = local.subnet_create
-  security_group_id = huaweicloud_networking_secgroup.oracle_sg[0].id
+  security_group_id = local.vpc_create == 1 ?  huaweicloud_networking_secgroup.oracle_sg[0].id : data.huaweicloud_networking_secgroup.oracle_sg[0].id
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
