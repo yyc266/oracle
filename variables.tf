@@ -41,7 +41,7 @@ variable "evs_data" {
 }
 
 variable "evs_flash" {
-  default = "flush"
+  default = "flash"
   type =  string
   description = "evs_flash 名字"
 }
