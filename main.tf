@@ -94,7 +94,7 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_4" {
   remote_ip_prefix  = var.subnet2_cidr
 }
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_5" {
-  count = local.subnet_create
+  //count = local.subnet_create
   security_group_id = huaweicloud_networking_secgroup.oracle_sg[0].id
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -213,7 +213,7 @@ resource "huaweicloud_networking_vip" "vip_2" {
   //ip_address = "192.168.1.243"
 }
 
-//网卡分配EIP
+//网卡分配VIP
 resource "huaweicloud_networking_vip_associate" "vip_associated_scan" {
   vip_id   = huaweicloud_networking_vip.scan_vip.id
   port_ids = [
@@ -327,6 +327,7 @@ resource "null_resource" "provision_1" {
 resource "null_resource" "provision_2" {
   depends_on = [null_resource.provision_1]
   provisioner "local-exec" {
-     command = format("hcloud VPC DeleteSecurityGroupRule/v3   --cli-region=%s --security_group_rule_id=%s",var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5[0].id)
+     //command = format("hcloud VPC DeleteSecurityGroupRule/v3   --cli-region=%s --security_group_rule_id=%s",var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5[0].id)
+     command = format("hcloud VPC DeleteSecurityGroupRule/v3   --cli-region=%s --security_group_rule_id=%s",var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5.id)
   }
 }
