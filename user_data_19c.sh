@@ -21,7 +21,7 @@ cat > /etc/hosts << EOF
 192.168.1.243  ${ORACLE_02}-vip 
  
 #scan ip 
-192.168.1.241  ${TEMPLATE_NAME}-orcl-scan 
+192.168.1.241  ${ORACLE_01}-${ORACLE_02}-orcl-scan 
 EOF
 
 #4.3

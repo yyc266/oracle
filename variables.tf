@@ -50,12 +50,6 @@ variable "oracle_version" {
   type        =  string
 }
 
-variable "template_name" {
-  description = "The prefix name of the Huaweicloud service"
-  default     = "demo"
-  type        =  string
-}
-
 variable "password" {
   description = "root/oracle/grid password"
   default     = "Aa!123456"

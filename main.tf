@@ -10,19 +10,19 @@ locals {
 //配置网络
 resource "huaweicloud_vpc" "vpc_1" {
   count = local.vpc_create
-  name = "${var.template_name}-${var.vpc_name}"
+  name = "${var.vpc_name}"
   cidr = var.vpc_cidr
 }
 
 data "huaweicloud_vpc" "vpc_1" {
   count =  local.vpc_create == 1 ? 0 : 1
-  name = "${var.template_name}-${var.vpc_name}"
+  name = "${var.vpc_name}"
 }
 
 resource "huaweicloud_vpc_subnet" "subnet_1" {
   count = local.subnet_create
   vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1[0].id : data.huaweicloud_vpc.vpc_1[0].id 
-  name        = "${var.template_name}-${var.subnet1_name}"
+  name        = "${var.subnet1_name}"
   cidr        = var.subnet1_cidr
   gateway_ip  = var.subnet1_gateway
 }
@@ -30,7 +30,7 @@ resource "huaweicloud_vpc_subnet" "subnet_1" {
 data "huaweicloud_vpc_subnet" "subnet_1" {
   count =  local.subnet_create == 1 ? 0 : 1
   vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1[0].id : data.huaweicloud_vpc.vpc_1[0].id 
-  name        = "${var.template_name}-${var.subnet1_name}"
+  name        = "${var.subnet1_name}"
   cidr        = var.subnet1_cidr
   gateway_ip  = var.subnet1_gateway
 }
@@ -38,7 +38,7 @@ data "huaweicloud_vpc_subnet" "subnet_1" {
 resource "huaweicloud_vpc_subnet" "subnet_2" {
   count = local.subnet_create
   vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1[0].id : data.huaweicloud_vpc.vpc_1[0].id 
-  name        = "${var.template_name}-${var.subnet2_name}"
+  name        = "${var.subnet2_name}"
   cidr        = var.subnet2_cidr
   gateway_ip  = var.subnet2_gateway
 }
@@ -46,7 +46,7 @@ resource "huaweicloud_vpc_subnet" "subnet_2" {
 data "huaweicloud_vpc_subnet" "subnet_2" {
   count =  local.subnet_create == 1 ? 0 : 1
   vpc_id      = local.vpc_create == 1 ? huaweicloud_vpc.vpc_1[0].id : data.huaweicloud_vpc.vpc_1[0].id 
-  name        = "${var.template_name}-${var.subnet2_name}"
+  name        = "${var.subnet2_name}"
   cidr        = var.subnet2_cidr
   gateway_ip  = var.subnet2_gateway
 }
@@ -54,12 +54,12 @@ data "huaweicloud_vpc_subnet" "subnet_2" {
 //安全组
 resource "huaweicloud_networking_secgroup" "oracle_sg" {
   count = local.vpc_create
-  name   = "${var.template_name}-secgroup"
+  name   = "secgroup"
 }
 
 data "huaweicloud_networking_secgroup" "oracle_sg" {
   count = local.vpc_create == 1 ? 0 : 1
-  name   = "${var.template_name}-secgroup"
+  name   = "secgroup"
 }
 
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_1" {
@@ -124,15 +124,15 @@ data "huaweicloud_compute_flavors" "myflavor" {
 }
 
 resource "huaweicloud_compute_servergroup" "oracle_sg" {
-  name     = "${var.template_name}-servergroup"
+  name     = "servergroup"
   policies = ["anti-affinity"]
 }
 
 resource "huaweicloud_compute_instance" "mycompute_1" {
-  name              = "${var.template_name}-${var.ecs_1}"
+  name              = "${var.ecs_1}"
   image_id          = data.huaweicloud_images_image.centos7.id
   flavor_id         =  data.huaweicloud_compute_flavors.myflavor.ids[0]
-  security_groups   = ["${var.template_name}-secgroup"]
+  security_groups   = ["secgroup"]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
   system_disk_size = 100
@@ -152,10 +152,10 @@ resource "huaweicloud_compute_instance" "mycompute_1" {
 }
 
 resource "huaweicloud_compute_instance" "mycompute_2" {
-  name              = "${var.template_name}-${var.ecs_2}"
+  name              = "${var.ecs_2}"
   image_id          = data.huaweicloud_images_image.centos7.id
   flavor_id         = data.huaweicloud_compute_flavors.myflavor.ids[0]
-  security_groups   = ["${var.template_name}-secgroup"]
+  security_groups   = ["secgroup"]
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   admin_pass        = var.password
   system_disk_size = 100
@@ -245,7 +245,7 @@ resource "huaweicloud_networking_vip_associate" "vip_associated_vip_2" {
 
 //共享磁盘
 resource "huaweicloud_evs_volume" "ocr" {
-  name              = "${var.template_name}-${var.evs_ocr}-${count.index}"
+  name              = "${var.evs_ocr}-${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
@@ -255,7 +255,7 @@ resource "huaweicloud_evs_volume" "ocr" {
 }
 
 resource "huaweicloud_evs_volume" "mgmt" {
-  name              = "${var.template_name}-${var.evs_mgmt}-${count.index}"
+  name              = "${var.evs_mgmt}-${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
@@ -265,7 +265,7 @@ resource "huaweicloud_evs_volume" "mgmt" {
 }
 
 resource "huaweicloud_evs_volume" "data" {
-  name              = "${var.template_name}-${var.evs_data}-${count.index}"
+  name              = "${var.evs_data}-${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
@@ -275,7 +275,7 @@ resource "huaweicloud_evs_volume" "data" {
 }
 
 resource "huaweicloud_evs_volume" "flash" {
-  name              = "${var.template_name}-${var.evs_flash}-${count.index}"
+  name              = "${var.evs_flash}-${count.index}"
   availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
   device_type       = "SCSI"
   volume_type       = "SAS"
@@ -291,9 +291,8 @@ data "template_file" "user_data" {
 
   vars = {
     PASSWORD  = var.password
-    ORACLE_01 = "${var.template_name}-oracle-01"
-    ORACLE_02 = "${var.template_name}-oracle-02"
-    TEMPLATE_NAME = var.template_name
+    ORACLE_01 = "oracle-01"
+    ORACLE_02 = "oracle-02"
   }
 }
 
