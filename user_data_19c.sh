@@ -188,7 +188,7 @@ yum -y install bc gcc gcc-c++  binutils  make gdb cmake  \
 yum groupinstall -y "X Window System"
 yum groupinstall -y "GNOME Desktop"
 
-yum install -y tigervnc-server
+yum install -y tigervnc-server expect
 #vnc
 cp /usr/lib/systemd/system/vncserver@.service /usr/lib/systemd/system/vncserver@:1.service
 sed -i 's/<USER>/root/g' /usr/lib/systemd/system/vncserver@:1.service
