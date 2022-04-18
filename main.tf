@@ -144,11 +144,11 @@ resource "huaweicloud_compute_instance" "mycompute_1" {
     //fixed_ip_v4  =   "192.168.1.168"
     source_dest_check  =  false
   }
-  network {
-    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2[0].id : data.huaweicloud_vpc_subnet.subnet_2[0].id
-    //fixed_ip_v4  = "192.168.117.79"
-    source_dest_check  =  false
-  }
+  # network {
+  #   uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2[0].id : data.huaweicloud_vpc_subnet.subnet_2[0].id
+  #   //fixed_ip_v4  = "192.168.117.79"
+  #   source_dest_check  =  false
+  # }
 }
 
 resource "huaweicloud_compute_instance" "mycompute_2" {
@@ -167,12 +167,35 @@ resource "huaweicloud_compute_instance" "mycompute_2" {
     //fixed_ip_v4  =  "192.168.1.63"
     source_dest_check  =  false
   }
-  network {
-    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2[0].id : data.huaweicloud_vpc_subnet.subnet_2[0].id
-    //fixed_ip_v4  =   "192.168.66.21"
-    source_dest_check  =  false
-  }
+  # network {
+  #   uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2[0].id : data.huaweicloud_vpc_subnet.subnet_2[0].id
+  #   //fixed_ip_v4  =   "192.168.66.21"
+  #   source_dest_check  =  false
+  # }
 
+}
+
+//网卡
+resource "huaweicloud_networking_port" "myport" {
+  count          = 2
+  name           = "port-${count.index}"
+  network_id     = huaweicloud_vpc_subnet.subnet_2.id
+  admin_state_up = "true"
+  security_group_ids = ["secgroup"]
+}
+
+
+
+resource "huaweicloud_compute_interface_attach" "attached_1" {
+  instance_id = huaweicloud_compute_instance.mycompute_1.id
+  port_id     = huaweicloud_networking_port.myport[0].id
+  source_dest_check  =  false
+}
+
+resource "huaweicloud_compute_interface_attach" "attached_2" {
+  instance_id = huaweicloud_compute_instance.mycompute_2.id
+  port_id     = huaweicloud_networking_port.myport[1].id
+  source_dest_check  =  false
 }
 
 //EIP

@@ -177,26 +177,44 @@ cat >> /etc/systemd/logind.conf  << EOF
 RemoveIPC=no
 EOF
 
-# yum -y install bc gcc gcc-c++  binutils  make gdb cmake  \ 
-#        glibc ksh elfutils-libelf elfutils-libelf-devel \
-#        fontconfig-devel glibc-devel libaio libaio-devel \
-#        libXrender libXrender-devel libX11 libXau sysstat \ 
-#        libXi libXtst libgcc librdmacm-devel libstdc++ \
-#        libstdc++-devel libxcb net-tools nfs-utils compat-libcap1 \
-#        compat-libstdc++  smartmontools  targetcli python python-configshell \
-#        python-rtslib python-six  unixODBC unixODBC-devel
-# yum groupinstall -y "X Window System"
-# yum groupinstall -y "GNOME Desktop"
+yum -y install bc gcc gcc-c++  binutils  make gdb cmake  \ 
+       glibc ksh elfutils-libelf elfutils-libelf-devel \
+       fontconfig-devel glibc-devel libaio libaio-devel \
+       libXrender libXrender-devel libX11 libXau sysstat \ 
+       libXi libXtst libgcc librdmacm-devel libstdc++ \
+       libstdc++-devel libxcb net-tools nfs-utils compat-libcap1 \
+       compat-libstdc++  smartmontools  targetcli python python-configshell \
+       python-rtslib python-six  unixODBC unixODBC-devel
+yum groupinstall -y "X Window System"
+yum groupinstall -y "GNOME Desktop"
 
-# yum install -y tigervnc-server
-# cat >> /etc/sysconfig/vncservers  << EOF
-# VNCSERVERS="2:root"
-# VNCSERVERARGS[2]="-geometry 1024x768 -nolisten tcp"
-# EOF
+yum install -y tigervnc-server
+#vnc
+cp /usr/lib/systemd/system/vncserver@.service /usr/lib/systemd/system/vncserver@:1.service
+sed -i 's/<USER>/root/g' /usr/lib/systemd/system/vncserver@:1.service
+/usr/bin/expect <<EOF
+spawn /usr/bin/vncpasswd
+expect "Password:"
+send " ${PASSWORD}\r"
+expect "Verify:"
+send " ${PASSWORD}\r"
+expect "Would you like to enter a view-only password (y/n)?"
+send "n\r"
+expect eof
+exit
+EOF
+cat >> /etc/sysconfig/vncservers  << EOF
+VNCSERVERS="2:root"
+VNCSERVERARGS[2]="-geometry 1024x768 -nolisten tcp"
+EOF
+systemctl daemon-reload
+systemctl start vncserver@:1.service
+cat >> /root/.vnc/xstartup  << EOF
+#xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
+#twm &
+gnome-session &
+EOF
+systemctl restart vncserver@:1.service
 
-#systemctl disable ntpd.service
-#systemctl stop ntpd.service
-#systemctl stop avahi-daemon.service
 
-#reboot
 
