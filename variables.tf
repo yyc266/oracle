@@ -46,7 +46,7 @@ variable "subnet2_gateway" {
 
 variable "oracle_version" {
   description = "oracle_version"
-  default     = "11g"
+  default     = "19c"
   type        =  string
 }
 
@@ -124,13 +124,13 @@ variable "ecs_2" {
 }
 
 variable "cpu" {
-  default = 4
+  default = 2
   type =  number
   description = "core"
 }
 
 variable "memory" {
-  default = 8
+  default = 4
   type =  number
   description = "GB"
 }
