@@ -190,7 +190,6 @@ resource "huaweicloud_compute_eip_associate" "associated" {
 resource "huaweicloud_networking_vip" "vip" {
   count = 3
   network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1[0].id : data.huaweicloud_vpc_subnet.subnet_1[0].id
-  //ip_address = "192.168.1.241"
 }
 
 
@@ -249,13 +248,21 @@ resource "huaweicloud_evs_volume" "flash" {
 
 //user_data
 data "template_file" "user_data" {
-  //template = file("./user_data.sh")
+  depends_on = [huaweicloud_compute_interface_attach.attached,huaweicloud_networking_vip_associate.vip_associated]
   template = var.oracle_version == "19c" ? file("./user_data_19c.sh") : file("./user_data_11g.sh")
 
   vars = {
     PASSWORD  = var.password
-    ORACLE_01 = "oracle-01"
-    ORACLE_02 = "oracle-02"
+    ORACLE_01 = var.ecs_1
+    ORACLE_02 = var.ecs_2
+    ORACLE_01_PUB_IP =  huaweicloud_compute_instance.mycompute[0].network.0.fixed_ip_v4
+    ORACLE_01_PRI_IP =  huaweicloud_compute_instance.mycompute[0].network.1.fixed_ip_v4
+    ORACLE_02_PUB_IP =  huaweicloud_compute_instance.mycompute[1].network.0.fixed_ip_v4
+    ORACLE_02_PRI_IP =  huaweicloud_compute_instance.mycompute[1].network.1.fixed_ip_v4
+    SCAN_VIP      = huaweicloud_networking_vip_associate.vip_associated[0].vip_ip_address
+    ORACLE_01_VIP = huaweicloud_networking_vip_associate.vip_associated[1].vip_ip_address
+    ORACLE_02_VIP = huaweicloud_networking_vip_associate.vip_associated[2].vip_ip_address
+
   }
 }
 
@@ -266,7 +273,7 @@ resource "local_file" "save_inventory" {
 
 //执行脚本
 resource "null_resource" "provision_1" {
-  depends_on = [huaweicloud_compute_eip_associate.associated,huaweicloud_compute_eip_associate.associated_1,local_file.save_inventory]
+  depends_on = [huaweicloud_compute_eip_associate.associated,local_file.save_inventory]
   count      = 2
   provisioner "file" {
     connection {
