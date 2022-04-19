@@ -99,7 +99,6 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_4" {
   remote_ip_prefix  = var.subnet2_cidr
 }
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_5" {
-  //count = local.subnet_create
   security_group_id = local.vpc_create == 1 ?  huaweicloud_networking_secgroup.oracle_sg[0].id : data.huaweicloud_networking_secgroup.oracle_sg[0].id
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -128,8 +127,9 @@ resource "huaweicloud_compute_servergroup" "oracle_sg" {
   policies = ["anti-affinity"]
 }
 
-resource "huaweicloud_compute_instance" "mycompute_1" {
-  name              = "${var.ecs_1}"
+resource "huaweicloud_compute_instance" "mycompute" {
+  count             = 2
+  name              = count.index == 0 ? var.ecs_1 : var.ecs_2
   image_id          = data.huaweicloud_images_image.centos7.id
   flavor_id         =  data.huaweicloud_compute_flavors.myflavor.ids[0]
   security_groups   = ["secgroup"]
@@ -141,38 +141,8 @@ resource "huaweicloud_compute_instance" "mycompute_1" {
   }
   network {
     uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1[0].id : data.huaweicloud_vpc_subnet.subnet_1[0].id
-    //fixed_ip_v4  =   "192.168.1.168"
     source_dest_check  =  false
   }
-  # network {
-  #   uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2[0].id : data.huaweicloud_vpc_subnet.subnet_2[0].id
-  #   //fixed_ip_v4  = "192.168.117.79"
-  #   source_dest_check  =  false
-  # }
-}
-
-resource "huaweicloud_compute_instance" "mycompute_2" {
-  name              = "${var.ecs_2}"
-  image_id          = data.huaweicloud_images_image.centos7.id
-  flavor_id         = data.huaweicloud_compute_flavors.myflavor.ids[0]
-  security_groups   = ["secgroup"]
-  availability_zone = data.huaweicloud_availability_zones.myaz.names[0]
-  admin_pass        = var.password
-  system_disk_size = 100
-  scheduler_hints {
-    group = huaweicloud_compute_servergroup.oracle_sg.id
-  }
-  network {
-    uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1[0].id : data.huaweicloud_vpc_subnet.subnet_1[0].id
-    //fixed_ip_v4  =  "192.168.1.63"
-    source_dest_check  =  false
-  }
-  # network {
-  #   uuid  = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2[0].id : data.huaweicloud_vpc_subnet.subnet_2[0].id
-  #   //fixed_ip_v4  =   "192.168.66.21"
-  #   source_dest_check  =  false
-  # }
-
 }
 
 //网卡
@@ -184,19 +154,13 @@ resource "huaweicloud_networking_port" "myport" {
   security_group_ids = [local.vpc_create == 1 ?  huaweicloud_networking_secgroup.oracle_sg[0].id : data.huaweicloud_networking_secgroup.oracle_sg[0].id]
 }
 
-
-
-resource "huaweicloud_compute_interface_attach" "attached_1" {
-  instance_id = huaweicloud_compute_instance.mycompute_1.id
-  port_id     = huaweicloud_networking_port.myport[0].id
+resource "huaweicloud_compute_interface_attach" "attached" {
+  count       = 2
+  instance_id = huaweicloud_compute_instance.mycompute[count.index].id
+  port_id     = huaweicloud_networking_port.myport[count.index].id
   source_dest_check  =  false
 }
 
-resource "huaweicloud_compute_interface_attach" "attached_2" {
-  instance_id = huaweicloud_compute_instance.mycompute_2.id
-  port_id     = huaweicloud_networking_port.myport[1].id
-  source_dest_check  =  false
-}
 
 //EIP
 resource "huaweicloud_vpc_bandwidth" "bandwidth_1" {
@@ -215,56 +179,32 @@ resource "huaweicloud_vpc_eip" "myeip" {
   count  = 2
 }
 
-resource "huaweicloud_compute_eip_associate" "associated_1" {
-  public_ip   = huaweicloud_vpc_eip.myeip[0].address
-  instance_id = huaweicloud_compute_instance.mycompute_1.id
+resource "huaweicloud_compute_eip_associate" "associated" {
+  count       = 2
+  public_ip   = huaweicloud_vpc_eip.myeip[count.index].address
+  instance_id = huaweicloud_compute_instance.mycompute[count.index].id
 }
 
-resource "huaweicloud_compute_eip_associate" "associated" {
-  public_ip   = huaweicloud_vpc_eip.myeip[1].address
-  instance_id = huaweicloud_compute_instance.mycompute_2.id
-}
 
 //申请虚拟IP地址并绑定ECS服务器对应的端口
-resource "huaweicloud_networking_vip" "scan_vip" {
+resource "huaweicloud_networking_vip" "vip" {
+  count = 3
   network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1[0].id : data.huaweicloud_vpc_subnet.subnet_1[0].id
   //ip_address = "192.168.1.241"
 }
 
-resource "huaweicloud_networking_vip" "vip_1" {
-  network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1[0].id : data.huaweicloud_vpc_subnet.subnet_1[0].id
-  //ip_address = "192.168.1.242"
-}
 
-resource "huaweicloud_networking_vip" "vip_2" {
-  network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1[0].id : data.huaweicloud_vpc_subnet.subnet_1[0].id
-  //ip_address = "192.168.1.243"
-}
 
 //网卡分配VIP
-resource "huaweicloud_networking_vip_associate" "vip_associated_scan" {
-  vip_id   = huaweicloud_networking_vip.scan_vip.id
+resource "huaweicloud_networking_vip_associate" "vip_associated" {
+  count    = 3
+  vip_id   = huaweicloud_networking_vip.vip[count.index].id
   port_ids = [
-    huaweicloud_compute_instance.mycompute_1.network.0.port,
-    huaweicloud_compute_instance.mycompute_2.network.0.port
+    huaweicloud_compute_instance.mycompute[0].network.0.port,
+    huaweicloud_compute_instance.mycompute[1].network.0.port
   ]
 }
 
-resource "huaweicloud_networking_vip_associate" "vip_associated_vip_1" {
-  vip_id   = huaweicloud_networking_vip.vip_1.id
-  port_ids = [
-    huaweicloud_compute_instance.mycompute_1.network.0.port,
-    huaweicloud_compute_instance.mycompute_2.network.0.port
-  ]
-}
-
-resource "huaweicloud_networking_vip_associate" "vip_associated_vip_2" {
-  vip_id   = huaweicloud_networking_vip.vip_2.id
-  port_ids = [
-    huaweicloud_compute_instance.mycompute_1.network.0.port,
-    huaweicloud_compute_instance.mycompute_2.network.0.port
-  ]
-}
 
 //共享磁盘
 resource "huaweicloud_evs_volume" "ocr" {
@@ -354,7 +294,6 @@ resource "null_resource" "provision_1" {
 resource "null_resource" "provision_2" {
   depends_on = [null_resource.provision_1]
   provisioner "local-exec" {
-     //command = format("hcloud VPC DeleteSecurityGroupRule/v3   --cli-region=%s --security_group_rule_id=%s",var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5[0].id)
      command = format("hcloud VPC DeleteSecurityGroupRule/v3   --cli-region=%s --security_group_rule_id=%s",var.region,huaweicloud_networking_secgroup_rule.secgroup_rule_5.id)
   }
 }
