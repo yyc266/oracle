@@ -256,9 +256,9 @@ data "template_file" "user_data" {
     ORACLE_01 = var.ecs_1
     ORACLE_02 = var.ecs_2
     ORACLE_01_PUB_IP =  huaweicloud_compute_instance.mycompute[0].network.0.fixed_ip_v4
-    ORACLE_01_PRI_IP =  huaweicloud_compute_instance.mycompute[0].network.1.fixed_ip_v4
+    ORACLE_01_PRI_IP =  huaweicloud_networking_port.myport.all_fixed_ips
     ORACLE_02_PUB_IP =  huaweicloud_compute_instance.mycompute[1].network.0.fixed_ip_v4
-    ORACLE_02_PRI_IP =  huaweicloud_compute_instance.mycompute[1].network.1.fixed_ip_v4
+    ORACLE_02_PRI_IP =  huaweicloud_networking_port.myport.all_fixed_ips
     SCAN_VIP      = huaweicloud_networking_vip_associate.vip_associated[0].vip_ip_address
     ORACLE_01_VIP = huaweicloud_networking_vip_associate.vip_associated[1].vip_ip_address
     ORACLE_02_VIP = huaweicloud_networking_vip_associate.vip_associated[2].vip_ip_address
