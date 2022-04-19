@@ -10,6 +10,12 @@ variable "create_type" {
   description = "1:在新的vpc创建ecs；2：在已有vpc和subnet创建ecs；3：在已有vpc里创建新的subnet和ecs"
 }
 
+variable "oracle_version" {
+  description = "oracle_version"
+  default     = "19c"
+  type        =  string
+}
+
 variable "vpc_name" {
   default = "vpc"
   type =  string
@@ -42,12 +48,6 @@ variable "subnet2_cidr" {
 
 variable "subnet2_gateway" {
   default = "192.168.64.1"
-}
-
-variable "oracle_version" {
-  description = "oracle_version"
-  default     = "19c"
-  type        =  string
 }
 
 variable "password" {
