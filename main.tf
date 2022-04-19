@@ -150,7 +150,7 @@ resource "huaweicloud_compute_instance" "mycompute" {
 resource "huaweicloud_networking_port" "myport" {
   count          = 2
   name           = "port-${count.index}"
-  network_id     = huaweicloud_vpc_subnet.subnet_2[0].id
+  network_id     = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_2[0].id : data.huaweicloud_vpc_subnet.subnet_2[0].id
   admin_state_up = "true"
   security_group_ids = [local.vpc_create == 1 ?  huaweicloud_networking_secgroup.oracle_sg[0].id : data.huaweicloud_networking_secgroup.oracle_sg[0].id]
 }
