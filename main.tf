@@ -98,6 +98,7 @@ resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_4" {
   protocol          = "tcp"
   remote_ip_prefix  = var.subnet2_cidr
 }
+
 resource "huaweicloud_networking_secgroup_rule" "secgroup_rule_5" {
   security_group_id = local.vpc_create == 1 ?  huaweicloud_networking_secgroup.oracle_sg[0].id : data.huaweicloud_networking_secgroup.oracle_sg[0].id
   direction         = "ingress"
@@ -161,7 +162,6 @@ resource "huaweicloud_compute_interface_attach" "attached" {
   source_dest_check  =  false
 }
 
-
 //EIP
 resource "huaweicloud_vpc_bandwidth" "bandwidth_1" {
   name = "bandwidth_1"
@@ -185,14 +185,11 @@ resource "huaweicloud_compute_eip_associate" "associated" {
   instance_id = huaweicloud_compute_instance.mycompute[count.index].id
 }
 
-
 //申请虚拟IP地址并绑定ECS服务器对应的端口
 resource "huaweicloud_networking_vip" "vip" {
   count = 3
   network_id = local.subnet_create == 1 ?  huaweicloud_vpc_subnet.subnet_1[0].id : data.huaweicloud_vpc_subnet.subnet_1[0].id
 }
-
-
 
 //网卡分配VIP
 resource "huaweicloud_networking_vip_associate" "vip_associated" {
@@ -203,7 +200,6 @@ resource "huaweicloud_networking_vip_associate" "vip_associated" {
     huaweicloud_compute_instance.mycompute[1].network.0.port
   ]
 }
-
 
 //共享磁盘
 resource "huaweicloud_evs_volume" "ocr" {
@@ -256,9 +252,9 @@ data "template_file" "user_data" {
     ORACLE_01 = var.ecs_1
     ORACLE_02 = var.ecs_2
     ORACLE_01_PUB_IP =  huaweicloud_compute_instance.mycompute[0].network.0.fixed_ip_v4
-    ORACLE_01_PRI_IP =  huaweicloud_networking_port.myport.all_fixed_ips[0]
+    ORACLE_01_PRI_IP =  huaweicloud_networking_port.myport[0].all_fixed_ips[0]
     ORACLE_02_PUB_IP =  huaweicloud_compute_instance.mycompute[1].network.0.fixed_ip_v4
-    ORACLE_02_PRI_IP =  huaweicloud_networking_port.myport.all_fixed_ips[0]
+    ORACLE_02_PRI_IP =  huaweicloud_networking_port.myport[1].all_fixed_ips[0]
     SCAN_VIP      = huaweicloud_networking_vip_associate.vip_associated[0].vip_ip_address
     ORACLE_01_VIP = huaweicloud_networking_vip_associate.vip_associated[1].vip_ip_address
     ORACLE_02_VIP = huaweicloud_networking_vip_associate.vip_associated[2].vip_ip_address

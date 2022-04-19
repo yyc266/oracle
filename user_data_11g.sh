@@ -79,36 +79,26 @@ session    required     pam_limits.so
 EOF
 
 #4.9
-groupadd -g 11001 oinstall
-groupadd -g 11002 dba  
-groupadd -g 11003 oper  
-groupadd -g 11004 backupdba  
-groupadd -g 11005 dgdba  
-groupadd -g 11006 kmdba  
-groupadd -g 11007 asmdba  
-groupadd -g 11008 asmoper  
-groupadd -g 11009 asmadmin  
-groupadd -g 11010 racdba  
-useradd -u 11011 -g oinstall -G dba,asmdba,backupdba,dgdba,kmdba,racdba,oper oracle  
-useradd -u 11012 -g oinstall -G asmadmin,asmdba,asmoper,dba grid
+groupadd -g 501 oinstall
+groupadd -g 502 asmadmin  
+groupadd -g 503 dba  
+groupadd -g 504 oper 
+groupadd -g 505 asmdba  
+groupadd -g 506 asmoper  
+ 
+useradd -u 501 -g oinstall -G asmadmin,asmdba,asmoper,oper,dba grid
+useradd -u 502 -g oinstall -G dba,asmdba,oper oracle 
 
-mkdir -p /u01/app/oracle                                
-chown -R oracle:oinstall /u01/app/oracle                
-chmod -R 775 /u01/app/oracle
-mkdir -p /u01/app/oracle/product/19.3.0/dbhome              
-chown -R oracle:oinstall /u01/app/oracle/product/19.3.0/dbhome
-chmod -R 775 /u01/app/oracle/product/19.3.0/dbhome
+mkdir -p /u01/app/11.2.0/grid   
+mkdir -p /u01/app/grid                             
+chown -R grid:oinstall /u01 
+mkdir -p /u01/app/oracle     
+chown -R oracle:oinstall /u01/app/oracle 
 
-mkdir -p /u01/app/grid                                
-chown -R oracle:oinstall /u01/app/grid               
-chmod -R 775 /u01/app/grid
-mkdir -p /u01/app/19.3.0/grid              
-chown -R grid:oinstall /u01/app/19.3.0/grid
-chmod -R 775 /u01/app/19.3.0/grid
-
-mkdir -p /u01/app/oraInventory
-chmod -R 775 /u01/app/oraInventory
-chown -R grid:oinstall /u01/app/oraInventory
+chmod -R 775 /u01/
+mkdir -p /u01/app/grid/oraInventory
+chmod -R 775 /u01/app/grid/oraInventory
+chown -R grid:oinstall /u01/app/grid/oraInventory
 
 echo ${PASSWORD} | passwd grid --stdin > /dev/null 2>&1
 
@@ -128,21 +118,14 @@ source /etc/profile
 #
 cat >> /home/grid/.bash_profile << EOF
 export ORACLE_BASE=/u01/app/grid
-export ORACLE_HOME=/u01/app/19.3.0/grid
-export NLS_DATE_FORMAT="yyyy-mm-dd HH24:MI:SS"
-export PATH=.:$PATH:$HOME/bin:$ORACLE_HOME/bin
-export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib
+export ORACLE_HOME=/u01/app/11.2.0/grid
+export PATH=/usr/sbin:$PATH
+export PATH=$ORACLE_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$ORACLE_HOME/bin:/bin:/usr/bin/:/usr/local/bin:/usr/X11R6/bin/
 export CLASSPATH=$ORACLE_HOME/JRE:$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib
-if [ $USER = "oracle" ] || [ $USER = "grid" ]; then
-        if [ $SHELL = "/bin/ksh" ]; then
-              ulimit -p 16384
-              ulimit -n 65536
-        else
-              ulimit -u 16384 -n 65536
-        fi
-        umask 022
-fi
+umask 022
 EOF
+
 if  [ `hostname` == "${ORACLE_01}"  ]
     then
        echo "export ORACLE_SID=+ASM1"   >> /home/grid/.bash_profile
@@ -152,20 +135,17 @@ fi
 #
 cat >> /home/oracle/.bash_profile << EOF
 export ORACLE_BASE=/u01/app/oracle
-export ORACLE_HOME=$ORACLE_BASE/product/19.3.0/dbhome
+export ORACLE_HOME=$ORACLE_BASE/product/11.2.0/dbhome_1
+export ORACLE_UNQNAME=rac
+export PATH=/usr/sbin:$PATH
 export PATH=$ORACLE_HOME/bin:$PATH
-export LD_LIBRARY_PATH=$ORACLE_HOME/bin:/bin:/usr/bin:/usr/local/bin
+export LD_LIBRARY_PATH=$ORACLE_HOME/bin:/bin:/usr/bin/:/usr/local/bin:/usr/X11R6/bin/
 export CLASSPATH=$ORACLE_HOME/JRE:$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib
-if [ $USER = "oracle" ] || [ $USER = "grid" ]; then
-        if [ $SHELL = "/bin/ksh" ]; then
-              ulimit -p 16384
-              ulimit -n 65536
-        else
-              ulimit -u 16384 -n 65536
-        fi
-        umask 022
-fi
+export TNS_ADMIN=$ORACLE_HOME/network/admin
+export
+umask 022
 EOF
+
 if  [ `hostname` == "${ORACLE_01}"  ]
     then
       echo "export ORACLE_SID=rac1"  >> /home/oracle/.bash_profile
@@ -177,14 +157,11 @@ cat >> /etc/systemd/logind.conf  << EOF
 RemoveIPC=no
 EOF
 
-yum -y install bc gcc gcc-c++  binutils  make gdb cmake  \ 
-       glibc ksh elfutils-libelf elfutils-libelf-devel \
-       fontconfig-devel glibc-devel libaio libaio-devel \
-       libXrender libXrender-devel libX11 libXau sysstat \ 
-       libXi libXtst libgcc librdmacm-devel libstdc++ \
-       libstdc++-devel libxcb net-tools nfs-utils compat-libcap1 \
-       compat-libstdc++  smartmontools  targetcli python python-configshell \
-       python-rtslib python-six  unixODBC unixODBC-devel
+yum -y install  gcc gcc-c++ make binutils  compat-libstdc++-33 elfutils-libelf \
+                elfutils-libelf-devel glibc glibc-common glibc-devel libaio \
+                libaio-devel libgcc libstdc++ libstdc++-devel compat-libcap1 \
+                ksh sysstat unixODBC unixODBC-devel libXp
+
 yum groupinstall -y "X Window System"
 yum groupinstall -y "GNOME Desktop"
 

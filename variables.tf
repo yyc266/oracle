@@ -17,7 +17,7 @@ variable "oracle_version" {
 }
 
 variable "vpc_name" {
-  default = "vpc"
+  default = "vpc-oracle"
   type =  string
   description = "vpc 名字"
 }
