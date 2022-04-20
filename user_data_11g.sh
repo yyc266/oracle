@@ -157,11 +157,11 @@ cat >> /etc/systemd/logind.conf  << EOF
 RemoveIPC=no
 EOF
 
-yum -y install binutils compat-libstdc++ compat-libcap1 gcc gcc-c++ \
+yum -y install binutils compat-libstdc++ compat-libcap1 gcc gcc-c++ elfutils-libelf-devel \
                glibc glibc*.i686 glibc-devel glibc-devel*.i686 ksh libaio*.i686 libaio \
                libaio-devel*.i686 libaio-devel libgcc*.i686 libgcc libstdc++*.i686 libstdc++ \
                libstdc++-devel*.i686 libstdc++-devel libXi*.i686 libXi libXtst*.i686 libXtst \
-               make sysstat unixODBC*.i686 unixODBC unixODBC-devel unzip
+               make sysstat unixODBC*.i686 unixODBC unixODBC-devel unzip  compat-libstdc++-33
 
 yum groupinstall -y "X Window System"
 yum groupinstall -y "GNOME Desktop"
